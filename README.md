@@ -129,8 +129,6 @@ FlipPilot is an **AI-powered resale automation system** that:
 1) **Redis**  
 ```bash
 docker run --rm -p 6379:6379 redis:7
-
-
-
+```
 
 *FlipPilot: Turning resale opportunities into automated profits.*
