@@ -170,13 +170,91 @@ def monitor_watchlist():
     print(f"\n⏰ SCHEDULED AGENT: Running watchlist monitoring...")
     print(f"   🔍 Checking for items that need monitoring...")
     
-    time.sleep(10)  # Simulate 10 seconds of work
+    # In production, this would:
+    # 1. Query database for all active watchlist searches
+    # 2. For each search, re-run the search and analysis
+    # 3. Compare with previous results to find new items
+    # 4. Send notifications for new profitable opportunities
+    # 5. Update database with new findings
     
-    # Dummy monitoring result
-    print(f"   ✅ SCHEDULED AGENT: Monitoring complete!")
-    print(f"   📊 Checked 0 items (no active items in database)")
+    # For now, simulate monitoring a few searches
+    active_searches = [
+        {
+            "id": "monitor_001",
+            "user_id": "user_001",
+            "search_terms": "vintage camera",
+            "category": "electronics",
+            "min_price": 100.0,
+            "max_price": 1000.0,
+            "location": "San Francisco",
+            "status": "active",
+            "created_at": "2025-10-26T15:00:00Z"
+        },
+        {
+            "id": "monitor_002", 
+            "user_id": "user_002",
+            "search_terms": "gaming laptop",
+            "category": "electronics",
+            "min_price": 500.0,
+            "max_price": 2000.0,
+            "location": "New York",
+            "status": "active",
+            "created_at": "2025-10-26T14:30:00Z"
+        }
+    ]
     
-    return "Monitored 0 items"
+    print(f"   📊 Found {len(active_searches)} active watchlist searches")
+    
+    total_new_items = 0
+    total_notifications = 0
+    
+    for search in active_searches:
+        print(f"\n   🔍 Monitoring search: {search['search_terms']}")
+        print(f"      User: {search['user_id']}")
+        print(f"      Category: {search['category']}")
+        
+        # Re-run the search and analysis (this would call your LangGraph workflow)
+        try:
+            # Simulate running the full pipeline
+            result = search_and_analyze_for_flips(search)
+            
+            new_profitable_items = result.get('profitable_items_found', 0)
+            total_items_analyzed = result.get('total_items_analyzed', 0)
+            
+            print(f"      📊 Analyzed {total_items_analyzed} items")
+            print(f"      💰 Found {new_profitable_items} profitable opportunities")
+            
+            total_new_items += new_profitable_items
+            
+            # If new profitable items found, send notifications
+            if new_profitable_items > 0:
+                notifications = [
+                    {
+                        "message": f"Found {new_profitable_items} new profitable {search['search_terms']} opportunities!",
+                        "type": "new_opportunities",
+                        "search_id": search['id'],
+                        "items_count": new_profitable_items
+                    }
+                ]
+                
+                # Process notifications for this user
+                process_watchlist_notifications(notifications, search['user_id'])
+                total_notifications += len(notifications)
+                
+        except Exception as e:
+            print(f"      ❌ Error monitoring search {search['id']}: {e}")
+    
+    print(f"\n   ✅ SCHEDULED AGENT: Monitoring complete!")
+    print(f"   📊 Total searches monitored: {len(active_searches)}")
+    print(f"   💰 Total new profitable items found: {total_new_items}")
+    print(f"   📧 Total notifications sent: {total_notifications}")
+    
+    return {
+        "searches_monitored": len(active_searches),
+        "new_profitable_items": total_new_items,
+        "notifications_sent": total_notifications,
+        "monitoring_completed_at": datetime.now().isoformat()
+    }
 
 def process_watchlist_notifications(notifications, user_id):
     """Process notifications for a user"""
