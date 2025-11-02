@@ -1,8 +1,18 @@
 from datetime import datetime
 import json
 import time
+import logging
+import sys
 from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, END
+
+# Configure logging to ensure it goes to stdout/stderr
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
 
 # LangGraph State Definition
 class FlipPilotState(TypedDict, total=False):
@@ -29,11 +39,11 @@ class FlipPilotState(TypedDict, total=False):
 def search_agent_node(state: FlipPilotState) -> FlipPilotState:
     """Agent 1: Search for items online"""
     
-    print(f"\n🔍 SEARCH AGENT: Looking for items online")
-    print(f"   🔎 Search terms: {state['search_criteria'].get('search_terms', 'N/A')}")
-    print(f"   📂 Category: {state['search_criteria'].get('category', 'N/A')}")
-    print(f"   💰 Price range: ${state['search_criteria'].get('min_price', 0)} - ${state['search_criteria'].get('max_price', '∞')}")
-    print(f"   📍 Location: {state['search_criteria'].get('location', 'Any')}")
+    logger.info("\n🔍 SEARCH AGENT: Looking for items online")
+    logger.info(f"   🔎 Search terms: {state['search_criteria'].get('search_terms', 'N/A')}")
+    logger.info(f"   📂 Category: {state['search_criteria'].get('category', 'N/A')}")
+    logger.info(f"   💰 Price range: ${state['search_criteria'].get('min_price', 0)} - ${state['search_criteria'].get('max_price', '∞')}")
+    logger.info(f"   📍 Location: {state['search_criteria'].get('location', 'Any')}")
     
     time.sleep(10)  # Simulate 10 seconds of searching
     
@@ -60,17 +70,17 @@ def search_agent_node(state: FlipPilotState) -> FlipPilotState:
     state["platforms_searched"] = ["ebay", "craigslist", "facebook"]
     state["current_step"] = "search_complete"
     
-    print(f"   ✅ SEARCH AGENT: Search complete!")
-    print(f"   📊 Found {len(found_items)} items")
-    print(f"   🌐 Searched platforms: ebay, craigslist, facebook")
+    logger.info(f"   ✅ SEARCH AGENT: Search complete!")
+    logger.info(f"   📊 Found {len(found_items)} items")
+    logger.info(f"   🌐 Searched platforms: ebay, craigslist, facebook")
     
     return state
 
 def analysis_agent_node(state: FlipPilotState) -> FlipPilotState:
     """Agent 2: Analyze items for profitability"""
     
-    print(f"\n💰 ANALYSIS AGENT: Analyzing items for profitability")
-    print(f"   📊 Analyzing {len(state['found_items'])} items")
+    logger.info(f"\n💰 ANALYSIS AGENT: Analyzing items for profitability")
+    logger.info(f"   📊 Analyzing {len(state['found_items'])} items")
     
     time.sleep(10)  # Simulate 10 seconds of analysis
     
@@ -103,10 +113,10 @@ def analysis_agent_node(state: FlipPilotState) -> FlipPilotState:
     state["total_items_analyzed"] = len(state['found_items'])
     state["current_step"] = "analysis_complete"
     
-    print(f"   ✅ ANALYSIS AGENT: Analysis complete!")
-    print(f"   📊 Analyzed {len(state['found_items'])} items")
-    print(f"   💰 Found {len(profitable_items)} profitable opportunities")
-    print(f"   🎯 Average profit margin: {sum(item['profit_margin'] for item in profitable_items) / len(profitable_items) if profitable_items else 0:.1f}%")
+    logger.info(f"   ✅ ANALYSIS AGENT: Analysis complete!")
+    logger.info(f"   📊 Analyzed {len(state['found_items'])} items")
+    logger.info(f"   💰 Found {len(profitable_items)} profitable opportunities")
+    logger.info(f"   🎯 Average profit margin: {sum(item['profit_margin'] for item in profitable_items) / len(profitable_items) if profitable_items else 0:.1f}%")
     
     return state
 
@@ -133,8 +143,8 @@ def build_flippilot_graph():
 def search_and_analyze_for_flips(search_criteria):
     """Main function that runs the LangGraph workflow"""
     
-    print(f"\n🚀 LANGGRAPH PIPELINE: Starting search and analysis workflow")
-    print(f"   📋 Search criteria: {search_criteria.get('search_terms', 'N/A')}")
+    logger.info(f"\n🚀 LANGGRAPH PIPELINE: Starting search and analysis workflow")
+    logger.info(f"   📋 Search criteria: {search_criteria.get('search_terms', 'N/A')}")
     
     # Build the graph
     graph = build_flippilot_graph()
@@ -152,9 +162,9 @@ def search_and_analyze_for_flips(search_criteria):
     # Run the graph
     final_state = graph.invoke(initial_state)
     
-    print(f"   🎉 LANGGRAPH PIPELINE: Complete workflow finished!")
-    print(f"   📊 Final results: {final_state['profitable_items_found']} profitable items found")
-    print(f"   🔄 Pipeline status: {final_state['pipeline_status']}")
+    logger.info(f"   🎉 LANGGRAPH PIPELINE: Complete workflow finished!")
+    logger.info(f"   📊 Final results: {final_state['profitable_items_found']} profitable items found")
+    logger.info(f"   🔄 Pipeline status: {final_state['pipeline_status']}")
     
     return {
         "profitable_items": final_state.get('profitable_items', []),
@@ -167,8 +177,8 @@ def search_and_analyze_for_flips(search_criteria):
 def monitor_watchlist():
     """Monitor all active watchlist items (scheduled task)"""
     
-    print(f"\n⏰ SCHEDULED AGENT: Running watchlist monitoring...")
-    print(f"   🔍 Checking for items that need monitoring...")
+    logger.info("⏰ SCHEDULED AGENT: Running watchlist monitoring...")
+    logger.info("   🔍 Checking for items that need monitoring...")
     
     # In production, this would:
     # 1. Query database for all active watchlist searches
@@ -203,15 +213,15 @@ def monitor_watchlist():
         }
     ]
     
-    print(f"   📊 Found {len(active_searches)} active watchlist searches")
+    logger.info(f"   📊 Found {len(active_searches)} active watchlist searches")
     
     total_new_items = 0
     total_notifications = 0
     
     for search in active_searches:
-        print(f"\n   🔍 Monitoring search: {search['search_terms']}")
-        print(f"      User: {search['user_id']}")
-        print(f"      Category: {search['category']}")
+        logger.info(f"\n   🔍 Monitoring search: {search['search_terms']}")
+        logger.info(f"      User: {search['user_id']}")
+        logger.info(f"      Category: {search['category']}")
         
         # Re-run the search and analysis (this would call your LangGraph workflow)
         try:
@@ -221,8 +231,8 @@ def monitor_watchlist():
             new_profitable_items = result.get('profitable_items_found', 0)
             total_items_analyzed = result.get('total_items_analyzed', 0)
             
-            print(f"      📊 Analyzed {total_items_analyzed} items")
-            print(f"      💰 Found {new_profitable_items} profitable opportunities")
+            logger.info(f"      📊 Analyzed {total_items_analyzed} items")
+            logger.info(f"      💰 Found {new_profitable_items} profitable opportunities")
             
             total_new_items += new_profitable_items
             
@@ -242,12 +252,12 @@ def monitor_watchlist():
                 total_notifications += len(notifications)
                 
         except Exception as e:
-            print(f"      ❌ Error monitoring search {search['id']}: {e}")
+            logger.error(f"      ❌ Error monitoring search {search['id']}: {e}")
     
-    print(f"\n   ✅ SCHEDULED AGENT: Monitoring complete!")
-    print(f"   📊 Total searches monitored: {len(active_searches)}")
-    print(f"   💰 Total new profitable items found: {total_new_items}")
-    print(f"   📧 Total notifications sent: {total_notifications}")
+    logger.info(f"\n   ✅ SCHEDULED AGENT: Monitoring complete!")
+    logger.info(f"   📊 Total searches monitored: {len(active_searches)}")
+    logger.info(f"   💰 Total new profitable items found: {total_new_items}")
+    logger.info(f"   📧 Total notifications sent: {total_notifications}")
     
     return {
         "searches_monitored": len(active_searches),
@@ -263,7 +273,7 @@ def process_watchlist_notifications(notifications, user_id):
     # For now, we'll just log them
     
     for notification in notifications:
-        print(f"NOTIFICATION for user {user_id}: {notification['message']}")
+        logger.info(f"NOTIFICATION for user {user_id}: {notification['message']}")
         
         # Here you would:
         # - Send email

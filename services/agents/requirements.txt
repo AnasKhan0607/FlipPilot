@@ -1,12 +1,12 @@
 # Core dependencies
 rq==1.15.1
-rq-scheduler==0.11.0
+rq-scheduler==0.13.1
 redis==5.0.1
 
-# LangGraph and AI
-langgraph==0.0.40
-langchain==0.1.0
-langchain-openai==0.0.5
+# LangGraph and AI 
+langgraph
+langchain
+langchain-openai
 
 # Web scraping
 requests==2.31.0
