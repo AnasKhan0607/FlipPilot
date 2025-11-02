@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # Redis service for job queues
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # FlipPilot API service
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./services/api/flippilot_api:/app/flippilot_api
+      - ./database:/app/database
+    working_dir: /app
+    command: uvicorn flippilot_api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Scheduler setup - runs once to register scheduled jobs
+  scheduler-setup:
+    build:
+      context: .
+      dockerfile: services/agents/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./services/agents/flippilot_agents:/app/flippilot_agents
+      - ./database:/app/database
+    working_dir: /app
+    command: python flippilot_agents/schedule_jobs.py
+    restart: "no"
+
+  # RQ Scheduler service - enqueues scheduled jobs
+  scheduler:
+    build:
+      context: .
+      dockerfile: services/agents/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - scheduler-setup
+    working_dir: /app
+    command: rqscheduler --url redis://redis:6379/0
+
+  # RQ Worker service - processes jobs
+  worker:
+    build:
+      context: .
+      dockerfile: services/agents/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - scheduler
+    volumes:
+      - ./services/agents/flippilot_agents:/app/flippilot_agents
+      - ./database:/app/database
+    working_dir: /app
+    command: python flippilot_agents/worker.py
+
+  dashboard:
+    image: eoranged/rq-dashboard
+    environment:
+      RQ_DASHBOARD_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "9181:9181"
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
